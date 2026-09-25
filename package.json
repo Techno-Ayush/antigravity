@@ -1,0 +1,14 @@
+{
+  "name": "peer-to-peer-skill-exchange",
+  "version": "1.0.0",
+  "description": "A Free Time-Bank & Knowledge Currency Web Application - Your Knowledge Becomes Currency",
+  "scripts": {
+    "server": "node server/server.js",
+    "client": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix client run build"
+  },
+  "keywords": ["skill-exchange", "time-bank", "credits", "education", "peer-learning"],
+  "author": "Antigravity Engineering",
+  "license": "ISC"
+}
