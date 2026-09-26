@@ -17,7 +17,11 @@ export const connectDB = async () => {
     console.log(`[MongoDB] Initializing in-memory Mongo server for zero-setup local execution...`);
     
     try {
-      mongoMemoryServer = await MongoMemoryServer.create();
+      mongoMemoryServer = await MongoMemoryServer.create({
+        binary: {
+          version: process.env.MONGOMS_VERSION || '8.2.1'
+        }
+      });
       const memoryUri = mongoMemoryServer.getUri();
       await mongoose.connect(memoryUri);
       console.log(`[MongoDB] Connected to In-Memory MongoDB at: ${memoryUri}`);

@@ -8,32 +8,48 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
-  // Load user profile on mount if token exists
+  // Load user profile on mount if token exists, or auto-login demo user
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const res = await api.get('/auth/me');
-        if (res.data.success) {
-          setUser(res.data.user);
-          localStorage.setItem('user', JSON.stringify(res.data.user));
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        try {
+          const res = await api.get('/auth/me');
+          if (res.data.success) {
+            setUser(res.data.user);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.warn('Stored token invalid, attempting demo fallback:', err);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
         }
-      } catch (err) {
-        console.error('Error fetching current user:', err);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
+      }
+
+      // Auto-login demo user Rahul Sharma on fresh launch
+      try {
+        const demoRes = await api.post('/auth/login', {
+          email: 'rahul@example.com',
+          password: 'password123'
+        });
+        if (demoRes.data.success) {
+          setToken(demoRes.data.token);
+          setUser(demoRes.data.user);
+          localStorage.setItem('token', demoRes.data.token);
+          localStorage.setItem('user', JSON.stringify(demoRes.data.user));
+        }
+      } catch (e) {
+        console.warn('Demo auto-login not available:', e);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
-  }, [token]);
+    initializeAuth();
+  }, []);
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
@@ -66,6 +82,23 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const switchUser = async (email, password = 'password123') => {
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      if (res.data.success) {
+        setToken(res.data.token);
+        setUser(res.data.user);
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        window.location.reload();
+        return res.data;
+      }
+    } catch (err) {
+      console.error('Failed to switch user:', err);
+      throw err;
+    }
+  };
+
   const refreshUser = async () => {
     try {
       const res = await api.get('/auth/me');
@@ -83,6 +116,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
+  const spendableCredits = user
+    ? Math.max(0, (user.totalCredits || 0) - (user.reservedCredits || 0))
+    : 0;
+
   return (
     <AuthContext.Provider
       value={{
@@ -92,11 +129,12 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        switchUser,
         refreshUser,
         updateUser,
         isAuthenticated: !!token && !!user,
         isAdmin: user?.role === 'ADMIN',
-        spendableCredits: user?.spendableCredits || Math.max(0, (user?.totalCredits || 0) - (user?.reservedCredits || 0))
+        spendableCredits
       }}
     >
       {children}
@@ -105,3 +143,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+export default AuthContext;

@@ -10,6 +10,18 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  const fetchUnreadMessages = async () => {
+    try {
+      const res = await api.get('/conversations/unread-count').catch(() => null);
+      if (res?.data?.success) {
+        setUnreadMessagesCount(res.data.count || 0);
+      }
+    } catch (err) {
+      console.warn('Could not fetch unread messages count:', err);
+    }
+  };
 
   // Initialize socket when authenticated
   useEffect(() => {
@@ -18,6 +30,7 @@ export const SocketProvider = ({ children }) => {
         socket.disconnect();
         setSocket(null);
       }
+      setUnreadMessagesCount(0);
       return;
     }
 
@@ -33,15 +46,24 @@ export const SocketProvider = ({ children }) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
       // If notification is credit related, refresh user balances!
-      if (notification.type.includes('CREDIT') || notification.type.includes('SESSION')) {
+      if (notification.type?.includes('CREDIT') || notification.type?.includes('SESSION')) {
         refreshUser();
       }
     });
 
+    newSocket.on('new_unread_message', () => {
+      setUnreadMessagesCount((prev) => prev + 1);
+    });
+
+    newSocket.on('conversation_marked_read', () => {
+      fetchUnreadMessages();
+    });
+
     setSocket(newSocket);
 
-    // Initial fetch of notifications
+    // Initial fetch of notifications and unread messages
     fetchNotifications();
+    fetchUnreadMessages();
 
     return () => {
       newSocket.disconnect();
@@ -83,15 +105,38 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
+  const markConversationRead = async (convId) => {
+    try {
+      if (!convId) return;
+      if (!String(convId).startsWith('demo-')) {
+        await api.patch(`/conversations/${convId}/read`).catch(() => {});
+        if (socket && user?._id) {
+          socket.emit('mark_conversation_read', { conversationId: convId, userId: user._id });
+        }
+      }
+      setUnreadMessagesCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Error marking conversation read:', err);
+    }
+  };
+
+  const clearAllUnreadMessages = () => {
+    setUnreadMessagesCount(0);
+  };
+
   return (
     <SocketContext.Provider
       value={{
         socket,
         notifications,
         unreadCount,
+        unreadMessagesCount,
         markNotificationRead,
         markAllRead,
-        refreshNotifications: fetchNotifications
+        markConversationRead,
+        clearAllUnreadMessages,
+        refreshNotifications: fetchNotifications,
+        refreshUnreadMessages: fetchUnreadMessages
       }}
     >
       {children}

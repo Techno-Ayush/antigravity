@@ -76,13 +76,23 @@ The database automatically seeds on startup with **24 skills**, **21 realistic c
 From the project root directory:
 
 ```bash
-# Start backend server (port 5000)
-cd server
-npm start
+# Install root, backend, and frontend dependencies:
+npm run install:all
 
-# In a second terminal, start Vite frontend (port 5173)
-cd client
+# Start both Backend server (port 5000) and Frontend (port 5173) concurrently:
 npm run dev
+# or
+npm start
 ```
 
-Open `http://localhost:5173/` in your browser.
+#### Running Services Separately:
+```bash
+# Start backend server (port 5000):
+npm run server
+
+# Start Vite frontend (port 5173):
+npm run client
+```
+
+Open [http://localhost:5173/](http://localhost:5173/) in your browser.
+

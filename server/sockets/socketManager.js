@@ -43,8 +43,35 @@ export const initSocket = (io) => {
 
         // Broadcast to everyone in conversation room
         io.to(conversationId.toString()).emit('receive_message', message);
+
+        // Also notify recipient personal room for instant real-time unread badge
+        const conv = await Conversation.findById(conversationId);
+        if (conv?.participants) {
+          conv.participants.forEach((pId) => {
+            if (pId.toString() !== senderId.toString()) {
+              io.to(pId.toString()).emit('new_unread_message', {
+                conversationId,
+                message
+              });
+            }
+          });
+        }
       } catch (err) {
         console.error('[Socket] Error handling send_message:', err.message);
+      }
+    });
+
+    // Mark conversation as read in real-time
+    socket.on('mark_conversation_read', async ({ conversationId, userId }) => {
+      try {
+        if (!conversationId || !userId) return;
+        await Message.updateMany(
+          { conversation: conversationId, sender: { $ne: userId }, read: false },
+          { $set: { read: true } }
+        );
+        io.to(userId.toString()).emit('conversation_marked_read', { conversationId });
+      } catch (err) {
+        console.error('[Socket] Error in mark_conversation_read:', err.message);
       }
     });
 

@@ -1,14 +1,31 @@
 {
   "name": "peer-to-peer-skill-exchange",
   "version": "1.0.0",
-  "description": "A Free Time-Bank & Knowledge Currency Web Application - Your Knowledge Becomes Currency",
+  "description": "Peer-to-Peer Skill Exchange - A Free Time-Bank & Knowledge Currency Web Application",
+  "main": "server/server.js",
   "scripts": {
-    "server": "node server/server.js",
+    "dev": "concurrently -k -n \"SERVER,CLIENT\" -c \"cyan.bold,magenta.bold\" \"npm run server\" \"npm run client\"",
+    "start": "concurrently -k -n \"SERVER,CLIENT\" -c \"cyan.bold,magenta.bold\" \"npm run server\" \"npm run client\"",
+    "server": "npm --prefix server run dev",
+    "server:start": "npm --prefix server start",
     "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
     "seed": "npm --prefix server run seed",
-    "build": "npm --prefix client run build"
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
   },
-  "keywords": ["skill-exchange", "time-bank", "credits", "education", "peer-learning"],
+  "keywords": [
+    "skill-exchange",
+    "time-bank",
+    "credit-economy",
+    "knowledge-currency",
+    "peer-to-peer",
+    "react",
+    "express",
+    "socket.io"
+  ],
   "author": "Antigravity Engineering",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }
