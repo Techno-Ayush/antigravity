@@ -5,11 +5,12 @@
   "main": "server/server.js",
   "scripts": {
     "dev": "concurrently -k -n \"SERVER,CLIENT\" -c \"cyan.bold,magenta.bold\" \"npm run server\" \"npm run client\"",
-    "start": "concurrently -k -n \"SERVER,CLIENT\" -c \"cyan.bold,magenta.bold\" \"npm run server\" \"npm run client\"",
+    "start": "node server/server.js",
+    "start:prod": "cross-env NODE_ENV=production node server/server.js",
     "server": "npm --prefix server run dev",
     "server:start": "npm --prefix server start",
     "client": "npm --prefix client run dev",
-    "build": "npm --prefix client run build",
+    "build": "npm run install:all && npm --prefix client run build",
     "seed": "npm --prefix server run seed",
     "install:all": "npm install && npm --prefix server install && npm --prefix client install"
   },
